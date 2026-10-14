@@ -1,0 +1,54 @@
+name: Build PROBALL AI APK
+
+on:
+workflow_dispatch:
+push:
+branches:
+- main
+
+permissions:
+contents: read
+
+jobs:
+build:
+name: Build Android APK
+runs-on: ubuntu-latest
+
+steps:
+  - name: Checkout source code
+    uses: actions/checkout@v4
+
+  - name: Set up Java 17
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: '17'
+      cache: gradle
+
+  - name: Set up Android SDK
+    uses: android-actions/setup-android@v3
+
+  - name: Check project files
+    run: |
+      if [ ! -f gradlew ]; then
+        echo "ERROR: gradlew not found in repository root."
+        exit 1
+      fi
+      if [ ! -f app/build.gradle.kts ] && [ ! -f app/build.gradle ]; then
+        echo "ERROR: Android app module not found."
+        exit 1
+      fi
+
+  - name: Make Gradle executable
+    run: chmod +x gradlew
+
+  - name: Build debug APK
+    run: ./gradlew assembleDebug --stacktrace
+
+  - name: Upload APK artifact
+    uses: actions/upload-artifact@v4
+    with:
+      name: PROBALL-AI-APK
+      path: app/build/outputs/apk/debug/*.apk
+      if-no-files-found: error
+      retention-days: 14
